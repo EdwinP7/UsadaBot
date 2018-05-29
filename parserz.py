@@ -75,20 +75,20 @@ def build_juicy_response(sanctions):
     elif 'Non-Analytical' in reasons_list:
         header = '[Ehhhh..](https://imgur.com/gallery/BDjhxfJ)'
     elif terms in non_fault:
-        header_bite = random.randint(0, len(non_juicy_responses) - 1)
+        header_bite = random.randint(0, (len(non_juicy_responses) - 1))
         header = non_juicy_responses[header_bite]
     else:
-        header_bite = random.randint(0, len(juicy_responses) - 1)
+        header_bite = random.randint(0, (len(juicy_responses) - 1))
         header = juicy_responses[header_bite]
 
     reasons = re.sub(r'[^\w]', ' ', reasons_list).lower().split(' ')
     for key in reasons_fun_bites:
         if key in reasons:
-            bite = random.randint(0, len(reasons_fun_bites[key]) - 1)
+            bite = random.randint(0, (len(reasons_fun_bites[key]) - 1))
             header = reasons_fun_bites[key][bite]
     
     name = re.sub(r'[\n]', '', name)
-    markdown = '{header}\n\n##{name}\nReason(s): {reason}\n\nTerms: {terms}\n'.format(
+    markdown = '{header}\n\nName|Reasons|Terms\n:---|:---|:---\n{name}|{reason}|{terms}\n'.format(
         header=header,
         name=name, 
         reason=reasons_list,
@@ -103,7 +103,7 @@ def get_bot_response(body):
     if len(body_content) >= 2:
         sanctions = get_sanctions(body_content[1].lower(), body_content[2].lower())
         if sanctions is None:
-            random_non_juicy = random.randint(0, len(non_juicy_responses) - 1)
+            random_non_juicy = random.randint(0, (len(non_juicy_responses) - 1))
             message = non_juicy_responses[random_non_juicy]
         else:
             message = build_juicy_response(sanctions)

@@ -31,13 +31,15 @@ def whos_hot(reddit):
             if body.lower() == 'bad bot' and comment.parent().author.name == reddit.user.me():
                 bite = random.randint(0, len( parserz.fun_bites['bad bot']) - 1)
                 reply = parserz.fun_bites['bad bot'][bite]
+                reply = reply + '\n\n^(summoned by: {summoner})'.format(summoner=comment.author.name)
                 comment.reply(reply.format(user=comment.author.name))
                 parser['REPLIES'][str(comment.id)] = 'True'
             elif 'usadabot' in body and body.split()[0] == 'usadabot' and comment.author.name != reddit.user.me():
                 try:
                     reply = parserz.get_bot_response(comment.body)
+                    reply = reply + '\n\n^(summoned by: {summoner})'.format(summoner=comment.author.name)
                 except:
-                    reply = 'Ya broke it...'
+                    reply = 'Ya broke it...try something like:\nusadabot ronda rousey\n\n^(summoned by: {summoner})'.format(summoner=comment.author.name)
                 comment.reply(reply)
                 parser['REPLIES'][str(comment.id)] = 'True'
 
