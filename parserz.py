@@ -42,7 +42,7 @@ fun_bites = {
         steroid usin bitch look at your pathetic bitch ass',
         'Lol you wear turtlenecks',
     ],
-    'diaz, nick': '[A gentleman never tells. ^(A gentleman never tells, nah...)](https://www.youtube.com/watch?v=piEb_XdZsMQ&feature=youtu.be&t=27)',
+    'diaz, nick': '[A gentleman never tells. ^(A gentleman never tells, nah...)](https://streamable.com/3p3o3)',
 
 }
 
@@ -61,14 +61,36 @@ reasons_fun_bites = {
     ]
 }
 
+easter_egg_names = {
+    'dana white': '[Dana White USADA Results](http://assets.sbnation.com/assets/946296/Screen_shot_2012-02-10_at_11.25.26_PM.png)',
+    'vitor': 'You\'ll have to talk to Jesus Christ.',
+    'trtor': 'You\'ll have to talk to Jesus Christ.',
+    'belfort': 'You\'ll have to talk to Jesus Christ.',
+    'ubereem': '🏇',
+    'overeem': '🏇',
+    'alistair': '🏇',
+    'cormier': 'Do you think I\'m just gunna sit there and let you test me USADA?',
+    'gsp': 'Definitely just the angle, bro.',
+    'pierre': 'Definitely just the angle, bro.',
+    'mark hunt': 'that\'s funny coming from a juicy little slut like u would love u \
+        to say anything to my face fucken cheating little betch u another \
+        steroid usin bitch look at your pathetic bitch ass',
+    'dern': '🍔🍔🍔🍔🍔🍔🍔🍔',
+    'buzznight': '[...](https://i.imgur.com/NUkLn6c.jpg)',
+}
+
 non_fault = [
     'No Fault or Negligence',
 ]
 
-def build_juicy_response(sanctions):
-    reasons_list = sanctions[0]
-    terms = sanctions[1]
-    name = sanctions[2]
+def easter_egg_name(body): 
+    for key in easter_egg_names:
+        if re.search(key, body, re.IGNORECASE):
+            return easter_egg_names[key]
+    return None
+
+
+def build_juicy_response(reasons_list, terms, name):
 
     if name.lower() in fun_bites:
         header = fun_bites[name.lower()]
@@ -98,7 +120,16 @@ def build_juicy_response(sanctions):
 
 
 def get_bot_response(body):
-    
+    """
+    Creates a response for a sanctioned athlete,
+    for a non-sanctioned athlete,
+    or a generic help message if the command is wrong
+    """
+    name = re.sub('usadabot', '', body, re.I)
+    easter_egg = easter_egg_name(name)
+    if easter_egg is not None:
+        return easter_egg
+
     body_content = body.split(' ')
     if len(body_content) >= 2:
         sanctions = get_sanctions(body_content[1].lower(), body_content[2].lower())
@@ -106,7 +137,7 @@ def get_bot_response(body):
             random_non_juicy = random.randint(0, (len(non_juicy_responses) - 1))
             message = non_juicy_responses[random_non_juicy]
         else:
-            message = build_juicy_response(sanctions)
+            message = build_juicy_response(sanctions[0], sanctions[1], sanctions[2])
     else:
         message = 'Try again. Like so: usadabot Jon Jones'
 
@@ -117,31 +148,32 @@ def get_sanctions(firstname, lastname):
     """
     Check first and last names against USADA Sanction table database
     """
-    name = '{0} {1}'.format(firstname, lastname)
     table = get_usada_table()
     results = table.find_all('a',
                              string=lambda x: x and x.lower() == '{0}, {1}'.format(lastname, firstname))
+    # Results of basic lastname, firstname check
     if results:
         name = results[0].text
         row_contents = results[0].parent.parent.contents
         reasons = row_contents[3].text
         terms = row_contents[7].text
         return [reasons, terms, name]
+    # Take a deeper look at the Sanctions table for a firstname match
     else:
         links = table.find_all('a')
-        result = check_string(links, firstname)
+        result = check_string(links, firstname, lastname)
         if result is not None:
             name = result.text
             row_contents = result.parent.parent.contents
             reasons = row_contents[3].text
             terms = row_contents[7].text
             return [reasons, terms, name]
-        else:
-            return None
+
+    return None
     
-def check_string(links, firstname):
+def check_string(links, firstname, lastname):
     for link in links:
-        if link.text and re.search(firstname, link.text.lower()):
+        if link.text and re.search(firstname, link.text.lower()) and re.search(lastname, link.text.lower()):
             return link
     return None
 
