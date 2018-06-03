@@ -3,6 +3,18 @@ import random
 import re
 from bs4 import BeautifulSoup
 
+
+RESPONSE_FOR_VITOR = 'You\'ll have to talk to Jesus Christ.' 
+RESPONSE_FOR_DANA = '[Dana White USADA Results](http://assets.sbnation.com/assets/946296/Screen_shot_2012-02-10_at_11.25.26_PM.png)'
+RESPONSE_FOR_UBER = '🏇'
+RESPONSE_FOR_CORMIER = 'Do you think I\'m just gunna sit there and let you test me USADA?'
+RESPONSE_FOR_GSP = 'Definitely just the angle, bro.'
+RESPONSE_FOR_BUZZ = '[...](https://i.imgur.com/NUkLn6c.jpg)'
+RESPONSE_FOR_DERN = '🍔🍔🍔🍔🍔🍔🍔🍔'
+RESPONSE_FOR_HUNT = 'that\'s funny coming from a juicy little slut like u would love u \
+        to say anything to my face fucken cheating little betch u another \
+        steroid usin bitch look at your pathetic bitch ass'
+
 juicy_responses = [
     'Juiced up feck.',
     'Juiced to the gills.',
@@ -61,22 +73,21 @@ reasons_fun_bites = {
     ]
 }
 
+
 easter_egg_names = {
-    'dana white': '[Dana White USADA Results](http://assets.sbnation.com/assets/946296/Screen_shot_2012-02-10_at_11.25.26_PM.png)',
-    'vitor': 'You\'ll have to talk to Jesus Christ.',
-    'trtor': 'You\'ll have to talk to Jesus Christ.',
-    'belfort': 'You\'ll have to talk to Jesus Christ.',
-    'ubereem': '🏇',
-    'overeem': '🏇',
-    'alistair': '🏇',
-    'cormier': 'Do you think I\'m just gunna sit there and let you test me USADA?',
-    'gsp': 'Definitely just the angle, bro.',
-    'pierre': 'Definitely just the angle, bro.',
-    'mark hunt': 'that\'s funny coming from a juicy little slut like u would love u \
-        to say anything to my face fucken cheating little betch u another \
-        steroid usin bitch look at your pathetic bitch ass',
-    'dern': '🍔🍔🍔🍔🍔🍔🍔🍔',
-    'buzznight': '[...](https://i.imgur.com/NUkLn6c.jpg)',
+    'dana white': RESPONSE_FOR_DANA,
+    'vitor': RESPONSE_FOR_VITOR,
+    'trtor': RESPONSE_FOR_VITOR,
+    'belfort': RESPONSE_FOR_VITOR,
+    'ubereem': RESPONSE_FOR_UBER,
+    'overeem': RESPONSE_FOR_UBER,
+    'alistair': RESPONSE_FOR_UBER,
+    'cormier': RESPONSE_FOR_CORMIER,
+    'gsp': RESPONSE_FOR_GSP,
+    'pierre': RESPONSE_FOR_GSP,
+    'mark hunt': RESPONSE_FOR_HUNT,
+    'dern': RESPONSE_FOR_DERN,
+    'buzznight': RESPONSE_FOR_BUZZ,
 }
 
 non_fault = [
@@ -118,13 +129,26 @@ def build_juicy_response(reasons_list, terms, name):
 
     return markdown
 
+def get_random_response(responses):
+    """
+    Get a random response from a list
+    """
 
-def get_bot_response(body):
+    bite = random.randint(0, len(responses) - 1)
+    reply = responses[bite]
+    return reply
+
+
+def get_bot_response(body, bad_bot=False):
     """
     Creates a response for a sanctioned athlete,
     for a non-sanctioned athlete,
     or a generic help message if the command is wrong
     """
+
+    if bad:
+        return get_random_response(fun_bites['bad bot'])
+
     name = re.sub('usadabot', '', body, re.I)
     easter_egg = easter_egg_name(name)
     if easter_egg is not None:
