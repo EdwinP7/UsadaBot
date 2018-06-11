@@ -1,10 +1,10 @@
-import parserz
 import praw
 import configparser
-import configuration
+import config
 import random
 import re
 import urllib.request
+from parserz import *
 from bs4 import BeautifulSoup
 
 # Name of section where replied-to comment ids are listed in
@@ -17,26 +17,28 @@ SUMMONED_BY_FOOTER = '\n\n^(summoned by: {summoner})'
 
 ERROR_MESSAGE = 'Ya broke it...try something like:\n\nusadabot Jon Jones'
 
-class Comment(object):
-    def __init__(self, id, body):
-        self.id = id
-        self.body = body
 
 def client_login():
-    reddit = praw.Reddit(
+    """
+    Reddit object initialization
+    """
+
+    login = praw.Reddit(
         client_secret=config.CLIENT_SECRET,
         client_id=config.CLIENT_ID,
         username=config.USERNAME,
         password=config.PASSWORD,
         user_agent=config.USER_AGENT,
     )
-    return reddit
+    return login
+
 
 def has_usadabot_inquiry(reddit, text, author):
-    if not re.search('usadabot', body, re.IGNORECASE):
+    if not re.search('usadabot', text, re.IGNORECASE):
         return False
-    elif 
-         and body.split()[0].lower() == 'usadabot' and author != reddit.user.me()
+    elif text.split()[0].lower() == 'usadabot' and author != reddit.user.me():
+        return True
+
 
 def mark_comment_as_replied(parser, comment_id):
     parser[REPLIES_SECTION][comment_id] = 'True'
@@ -54,7 +56,7 @@ def run_bot(reddit):
     parser = configparser.ConfigParser() 
     parser.read(config.CONFIG_FILE)
 
-    for comment in reddit.subreddit('MMA').comments(limit=1000):
+    for comment in reddit.subreddit('test').comments(limit=1000):
         body = comment.body
         author = comment.author.name
         bot_response = None
@@ -66,23 +68,24 @@ def run_bot(reddit):
             elif has_usadabot_inquiry(reddit, body, author):
                 try:
                     bot_response = get_bot_response(body)
-                except Exception as e:
+                except Exception as exc:
+                    print(exc)
                     bot_response = ERROR_MESSAGE
 
             if bot_response is not None:
                 bot_response = bot_response.format(user=author) + SUMMONED_BY_FOOTER.format(summoner=author)
                 comment.reply(bot_response)
-                mark_comment_as_replied(parser, comment_id)
+                mark_comment_as_replied(parser, comment.id)
 
 
-def get_easter_egg_name(body): 
+def get_easter_egg_message(body): 
     for key in easter_egg_names:
         if re.search(key, body, re.IGNORECASE):
             return easter_egg_names[key]
     return None
 
 
-def build_juicy_response(reasons_list, terms, name):
+def build_juicy_response(reasons_list, terms, name, start_date, end_date):
 
     if name.lower() in fun_bites:
         header = fun_bites[name.lower()]
@@ -100,15 +103,19 @@ def build_juicy_response(reasons_list, terms, name):
         if key in reasons:
             bite = random.randint(0, (len(reasons_fun_bites[key]) - 1))
             header = reasons_fun_bites[key][bite]
-    
+
     name = re.sub(r'[\n]', '', name)
-    markdown = '{header}\n\nName|Reasons|Terms\n:---|:---|:---\n{name}|{reason}|{terms}\n'.format(
-        header=header,
-        name=name, 
-        reason=reasons_list,
-        terms=terms)
+    markdown = '{header}\n\nName|Reasons|Terms|Sanction Start|Sanction End\n:---|:---|:---|:---|:---\n\{name}|{reason}|{terms}|{start}|{end}\n'.format(
+            header=header,
+            name=name,
+            reason=reasons_list,
+            terms=terms,
+            start=start_date,
+            end=end_date
+            )
 
     return markdown
+
 
 def get_random_response(responses):
     """
@@ -127,7 +134,7 @@ def get_bot_response(body, bad_bot=False):
     or a generic help message if the command is wrong
     """
 
-    if bad:
+    if bad_bot:
         return get_random_response(fun_bites['bad bot'])
 
     name = re.sub('usadabot', '', body, re.I)
@@ -161,9 +168,11 @@ def get_sanctions(firstname, lastname):
     if results:
         name = results[0].text
         row_contents = results[0].parent.parent.contents
+        sanction_start = row_contents[5].text
+        sanction_end = row_contents[6].text
         reasons = row_contents[3].text
         terms = row_contents[7].text
-        return (reasons, terms, name)
+        return (reasons, terms, name, sanction_start, sanction_end)
     # Take a deeper look at the Sanctions table for a firstname, lastname match
     else:
         name_cells = table.find_all('a')
@@ -171,12 +180,15 @@ def get_sanctions(firstname, lastname):
         if result is not None:
             name = result.text
             row_contents = result.parent.parent.contents
+            sanction_start = row_contents[5].text
+            sanction_end = row_contents[6].text
             reasons = row_contents[3].text
             terms = row_contents[7].text
-            return (reasons, terms, name)
+            return (reasons, terms, name, sanction_start, sanction_end)
 
     return None
-    
+
+  
 def match_first_and_last(name_cells, firstname, lastname):
     for name in name_cells:
         if name.text and re.search(firstname, name.text.lower()) and re.search(lastname, name.text.lower()):
@@ -184,7 +196,6 @@ def match_first_and_last(name_cells, firstname, lastname):
     return None
 
     
-
 def get_usada_table():
     """
     Returns USADA's Sanctions Table as a beautiful soup
